@@ -73,6 +73,16 @@ export const authAPI = {
   },
 };
 
+// Chat API functions
+export const chatAPI = {
+  analyzeSkinImage: async (imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    const response = await api.post('/chat/analyze', formData);
+    return response.data;
+  },
+};
+
 // Helper functions for token management
 export const tokenManager = {
   setToken: (token: string) => {
