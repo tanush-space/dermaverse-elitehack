@@ -34,6 +34,9 @@ const storage = multer.diskStorage({
     }
 });
 
+// Memory storage for direct Gemini API processing (no disk writing)
+const memoryStorage = multer.memoryStorage();
+
 // File filter for images only
 const fileFilter = (req, file, cb) => {
     console.log('🖼️ Multer fileFilter - checking file:', file.originalname, 'mime:', file.mimetype);
@@ -46,6 +49,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
+// Disk storage for onboarding (saves baseline photo)
 const upload = multer({
     storage,
     fileFilter,
@@ -54,4 +58,13 @@ const upload = multer({
     }
 });
 
-module.exports = { upload };
+// Memory storage for AI analysis (direct to Gemini, no disk write)
+const uploadMemory = multer({
+    storage: memoryStorage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
+
+module.exports = { upload, uploadMemory };

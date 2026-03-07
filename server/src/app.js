@@ -8,7 +8,7 @@ const app=express();
 
 // CORS configuration for frontend
 app.use(cors({
-  origin: 'http://localhost:3000', // Your frontend URL
+  origin: ['http://localhost:3000', 'http://localhost:3001'], // Your frontend URL
   credentials: true
 }));
 
@@ -21,8 +21,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 //importing routes
 const authRoutes=require('./routes/auth.routes');
+const chatRoutes=require('./routes/chat.routes');
 
 //using routes
 app.use("/api/auth",authRoutes)
+app.use("/api/chat",chatRoutes)
 
 module.exports=app
