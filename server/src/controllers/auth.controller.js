@@ -48,10 +48,29 @@ async function register(req, res) {
       token: token,
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error:', error.message);
+    
+    // Check if it's a validation error
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: messages.join(', ') || "Validation failed",
+        status: "failed"
+      });
+    }
+    
+    // Check if it's a duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Email already exists",
+        status: "failed"
+      });
+    }
+    
     res.status(500).json({
       message: "Registration failed",
-      error: error.message
+      error: error.message,
+      status: "failed"
     });
   }
 }
@@ -127,16 +146,34 @@ async function completeOnboarding(req, res) {
   console.log('🎯 Complete onboarding endpoint hit!');
   console.log('🎯 User from middleware:', req.user ? req.user.email : 'No user');
   console.log('🎯 Request body:', req.body);
-  console.log('🎯 Request file:', req.file ? req.file.filename : 'No file');
+  console.log('🎯 Request file:', req.file ? JSON.stringify({
+    filename: req.file.filename,
+    path: req.file.path,
+    size: req.file.size,
+    mimetype: req.file.mimetype,
+    destination: req.file.destination
+  }) : 'No file received');
   
   try {
     const { skinType, primaryConcerns, sunExposure, pollutionExposure, dietPattern } = req.body;
     
+    // Check if there was a multer error (file too large, wrong format, etc.)
+    if (req.multerError) {
+      console.error('🎯 Multer error:', req.multerError);
+      return res.status(400).json({
+        message: req.multerError.message || "File upload failed",
+        status: "failed"
+      });
+    }
+    
     // Get uploaded file path
     const rawPhoto = req.file ? req.file.path : null;
+    
+    console.log('🎯 Raw photo path:', rawPhoto);
 
     // Validate required fields
     if (!skinType || !primaryConcerns || !sunExposure || !pollutionExposure) {
+      console.log('🎯 Validation failed - Missing fields:', { skinType, primaryConcerns, sunExposure, pollutionExposure });
       return res.status(400).json({
         message: "Missing required onboarding fields",
         status: "failed"
@@ -154,7 +191,7 @@ async function completeOnboarding(req, res) {
     }
 
     const user = await userModel.findByIdAndUpdate(
-      req.user._id, // Use req.user._id instead of req.user.userId
+      req.user._id, // Use req.user._id from the populated user object
       {
         skinType,
         primaryConcerns: parsedConcerns,
@@ -168,6 +205,7 @@ async function completeOnboarding(req, res) {
     );
 
     if (!user) {
+      console.log('🎯 User not found for ID:', req.user._id);
       return res.status(404).json({
         message: "User not found",
         status: "failed"
@@ -175,6 +213,7 @@ async function completeOnboarding(req, res) {
     }
 
     console.log('🎯 Onboarding completed for user:', user.email);
+    console.log('🎯 User rawPhoto in DB:', user.rawPhoto);
 
     res.status(200).json({
       message: "Onboarding completed successfully",
@@ -187,10 +226,12 @@ async function completeOnboarding(req, res) {
       }
     });
   } catch (error) {
-    console.error("🎯 Onboarding error:", error);
+    console.error("🎯 Onboarding error:", error.message);
+    console.error("🎯 Error stack:", error.stack);
     res.status(500).json({
       message: "Error completing onboarding",
-      status: "failed"
+      status: "failed",
+      error: error.message
     });
   }
 }

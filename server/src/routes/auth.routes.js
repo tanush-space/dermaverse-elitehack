@@ -29,7 +29,7 @@ router.get(
 router.post(
   "/complete-onboarding",
   authMiddleware.authUserMiddleware,
-  upload.single('rawPhoto'), // Handle single file upload with field name 'rawPhoto'
+  upload.single('rawPhoto'),
   authController.completeOnboarding,
 );
 
