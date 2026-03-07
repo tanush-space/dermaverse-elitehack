@@ -13,4 +13,12 @@ router.post(
   chatController.analyzeSkinPhoto
 );
 
+// POST /api/chat/message [PROTECTED] - Chat with AI (with optional image)
+router.post(
+  "/message",
+  authMiddleware.authUserMiddleware,
+  uploadMemory.single('image'),
+  chatController.chatWithAI
+);
+
 module.exports = router;
