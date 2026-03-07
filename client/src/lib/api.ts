@@ -81,6 +81,16 @@ export const chatAPI = {
     const response = await api.post('/chat/analyze', formData);
     return response.data;
   },
+
+  sendMessage: async (message: string, imageFile?: File) => {
+    const formData = new FormData();
+    formData.append('message', message);
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    const response = await api.post('/chat/message', formData);
+    return response.data;
+  },
 };
 
 // Helper functions for token management
