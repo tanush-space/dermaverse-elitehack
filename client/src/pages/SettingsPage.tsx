@@ -1,12 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, Bell, Shield, Smartphone, CreditCard, LogOut, ChevronRight } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, CreditCard, LogOut, ChevronRight, Upload, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { tokenManager } from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+}
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = tokenManager.getUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+    
+    // Get profile photo from localStorage if available
+    const storedPhoto = localStorage.getItem('profilePhoto');
+    if (storedPhoto) {
+      setProfilePhoto(storedPhoto);
+    }
+    
+    setLoading(false);
+  }, []);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setProfilePhoto(base64String);
+        localStorage.setItem('profilePhoto', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setProfilePhoto(null);
+    localStorage.removeItem('profilePhoto');
+  };
+
+  const handleLogout = () => {
+    tokenManager.removeToken();
+    navigate('/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">
       <div>
@@ -41,7 +101,9 @@ export default function SettingsPage() {
           ))}
           
           <div className="pt-8 mt-8 border-t border-slate-200">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
               <LogOut className="w-4 h-4" />
               Sign Out
             </button>
@@ -64,33 +126,64 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-full bg-slate-200 overflow-hidden border-4 border-white shadow-sm relative group cursor-pointer">
-                    <img src="https://picsum.photos/seed/user1/200/200" alt="Profile" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-300 to-slate-400">
+                        <User className="w-10 h-10 text-slate-600" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-white text-xs font-medium">Change</span>
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium text-slate-900">Sarah Jenkins</h3>
-                    <p className="text-sm text-slate-500 mb-3">sarah.jenkins@example.com</p>
+                    <h3 className="text-lg font-medium text-slate-900">{user?.name || 'User'}</h3>
+                    <p className="text-sm text-slate-500 mb-3">{user?.email || 'email@example.com'}</p>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="h-8 text-xs">Upload New</Button>
-                      <Button variant="ghost" size="sm" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50">Remove</Button>
+                      <input 
+                        type="file" 
+                        id="photoInput"
+                        accept="image/*" 
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 text-xs cursor-pointer"
+                        onClick={() => document.getElementById('photoInput')?.click()}
+                      >
+                        <Upload className="w-3 h-3 mr-1" />
+                        Upload New
+                      </Button>
+                      {profilePhoto && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={handleRemovePhoto}
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Remove
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" defaultValue="Sarah" />
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input id="name" value={user?.name || ''} disabled className="bg-slate-50" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" defaultValue="Jenkins" />
+                    <Label htmlFor="id">User ID</Label>
+                    <Input id="id" value={user?._id || ''} disabled className="bg-slate-50 font-mono text-xs" />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" defaultValue="sarah.jenkins@example.com" />
+                    <Input id="email" type="email" value={user?.email || ''} disabled className="bg-slate-50" />
                   </div>
                 </div>
               </CardContent>

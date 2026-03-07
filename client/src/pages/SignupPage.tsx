@@ -6,18 +6,45 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GooglyEyes } from '@/components/GooglyEyes';
+import { authAPI, tokenManager } from '@/lib/api';
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await authAPI.register(formData);
+      
+      // Save token and user to localStorage
+      tokenManager.setToken(response.token);
+      tokenManager.setUser(response.user);
+      
+      // Navigate to onboarding
       navigate('/onboarding');
-    }, 1500);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,12 +102,27 @@ export default function SignupPage() {
             <p className="text-slate-500">Start your preventive dermatology journey today.</p>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input id="name" type="text" placeholder="John Doe" className="pl-10 text-slate-900" required />
+                <Input 
+                  id="name" 
+                  name="name"
+                  type="text" 
+                  placeholder="John Doe" 
+                  className="pl-10 text-slate-900" 
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
             </div>
 
@@ -88,7 +130,16 @@ export default function SignupPage() {
               <Label htmlFor="email">Email address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input id="email" type="email" placeholder="name@example.com" className="pl-10 text-slate-900" required />
+                <Input 
+                  id="email" 
+                  name="email"
+                  type="email" 
+                  placeholder="name@example.com" 
+                  className="pl-10 text-slate-900" 
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
             </div>
             
@@ -96,7 +147,16 @@ export default function SignupPage() {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input id="password" type="password" placeholder="••••••••" className="pl-10 text-slate-900" required />
+                <Input 
+                  id="password" 
+                  name="password"
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="pl-10 text-slate-900" 
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
             </div>
 

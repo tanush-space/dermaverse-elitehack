@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
@@ -23,6 +23,14 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedPhoto = localStorage.getItem('profilePhoto');
+    if (storedPhoto) {
+      setProfilePhoto(storedPhoto);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -70,12 +78,16 @@ export default function DashboardLayout() {
 
           <div className="p-6 border-t border-[#EDE8E0]/50">
             <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-[#F4EBE6] cursor-pointer transition-colors">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#FDFBF7] shadow-sm">
-                <img src="https://picsum.photos/seed/user1/100/100" alt="User" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#FDFBF7] shadow-sm bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="User" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-6 h-6 text-slate-600" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-serif font-medium text-[#2C2A25] truncate">Sarah Jenkins</p>
-                <p className="text-xs text-[#5A6B5D] uppercase tracking-widest truncate mt-0.5">Pro Member</p>
+                <p className="text-[15px] font-serif font-medium text-[#2C2A25] truncate">{user?.name || 'User'}</p>
+                <p className="text-xs text-[#5A6B5D] uppercase tracking-widest truncate mt-0.5">Member</p>
               </div>
             </div>
           </div>

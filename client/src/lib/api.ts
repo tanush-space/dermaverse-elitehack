@@ -3,18 +3,24 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: 'http://localhost:5000/api', // Adjust port if different
-  headers: {
-    'Content-Type': 'application/json',
-  },
   withCredentials: true, // Include cookies for authentication
 });
 
-// Add token to requests if available
+// Add token to requests if available and remove Content-Type for FormData
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // If data is FormData, remove Content-Type header so axios sets it with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  } else if (!config.headers['Content-Type']) {
+    // Set default Content-Type for non-FormData requests
+    config.headers['Content-Type'] = 'application/json';
+  }
+  
   return config;
 });
 
@@ -55,11 +61,9 @@ export const authAPI = {
   },
 
   completeOnboarding: async (onboardingData: FormData) => {
-    const response = await api.post('/auth/complete-onboarding', onboardingData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type header - let axios handle it automatically
+    // axios will set it with the correct boundary for multipart/form-data
+    const response = await api.post('/auth/complete-onboarding', onboardingData);
     return response.data;
   },
 

@@ -5,6 +5,7 @@ import { Activity, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { authAPI, tokenManager } from '@/lib/api';
 
 const GooglyEye = ({ mouseX, mouseY, isClosed }: { mouseX: number, mouseY: number, isClosed: boolean }) => {
   const eyeRef = useRef<HTMLDivElement>(null);
@@ -53,8 +54,13 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -64,13 +70,33 @@ export default function LoginPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await authAPI.login(formData);
+      
+      // Save token and user to localStorage
+      tokenManager.setToken(response.token);
+      tokenManager.setUser(response.user);
+      
+      // Navigate to dashboard or onboarding based on completion status
       navigate('/dashboard');
-    }, 1500);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -135,6 +161,12 @@ export default function LoginPage() {
             <p className="text-slate-500">Enter your credentials to access your dashboard.</p>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700">Email address</Label>
@@ -142,9 +174,12 @@ export default function LoginPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <Input 
                   id="email" 
+                  name="email"
                   type="email" 
                   placeholder="name@example.com" 
-                  className="pl-10 text-slate-900 placeholder:text-slate-400 bg-white border-slate-300 focus-visible:ring-orange-500" 
+                  className="pl-10 text-slate-900 placeholder:text-slate-400 bg-white border-slate-300 focus-visible:ring-orange-500"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required 
                 />
               </div>
@@ -159,9 +194,12 @@ export default function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <Input 
                   id="password" 
+                  name="password"
                   type={showPassword ? "text" : "password"} 
                   placeholder="••••••••" 
-                  className="pl-10 pr-10 text-slate-900 placeholder:text-slate-400 bg-white border-slate-300 focus-visible:ring-orange-500" 
+                  className="pl-10 pr-10 text-slate-900 placeholder:text-slate-400 bg-white border-slate-300 focus-visible:ring-orange-500"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   onFocus={() => setIsPasswordFocused(true)}
                   onBlur={() => setIsPasswordFocused(false)}
                   required 

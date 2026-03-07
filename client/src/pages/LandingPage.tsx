@@ -19,7 +19,7 @@ export default function LandingPage() {
   const scaleHero = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
 
   return (
-    <div ref={containerRef} className="bg-[#FDFBF7] text-[#2C2A25] selection:bg-[#D97757]/30 font-sans">
+    <div ref={containerRef} className="relative bg-[#FDFBF7] text-[#2C2A25] selection:bg-[#D97757]/30 font-sans">
       <div className="fixed inset-0 bg-noise pointer-events-none z-50 mix-blend-overlay opacity-40" />
       
       {/* Navigation */}
