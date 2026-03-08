@@ -31,6 +31,70 @@ export default function DashboardHome() {
 });
 const [derms, setDerms] = React.useState<any[]>([]);
 const [bookedAppointment, setBookedAppointment] = React.useState<any>(null);
+const [currentTipIndex, setCurrentTipIndex] = React.useState(0);
+
+const skinTips = [
+  {
+    title: "Stay Hydrated",
+    tip: "Drink at least 8 glasses of water daily to maintain skin hydration from within. Proper hydration helps your skin maintain elasticity and reduces the appearance of fine lines."
+  },
+  {
+    title: "SPF is Essential",
+    tip: "Apply SPF 30+ daily, even on cloudy days. UV protection is the best anti-aging strategy. Reapply every 2 hours if you're outdoors to prevent sun damage and premature aging."
+  },
+  {
+    title: "Sleep for Glowing Skin",
+    tip: "Get 7-9 hours of quality sleep nightly. During sleep, your skin repairs and regenerates. Poor sleep increases cortisol levels, which can trigger acne and inflammation."
+  },
+  {
+    title: "Double Cleanse Routine",
+    tip: "Use an oil cleanser followed by a water-based cleanser. This two-step process removes makeup, sunscreen, and impurities effectively without stripping your skin."
+  },
+  {
+    title: "Niacinamide Benefits",
+    tip: "Niacinamide (Vitamin B3) minimizes pores, regulates sebum, and strengthens the skin barrier. It's effective for both oily and sensitive skin types."
+  },
+  {
+    title: "Exfoliate Wisely",
+    tip: "Exfoliate 2-3 times per week to remove dead skin cells. Use chemical exfoliants (AHAs, BHAs) over physical scrubs for gentler, more effective results."
+  },
+  {
+    title: "Retinol Magic",
+    tip: "Retinol is the most proven ingredient for anti-aging. Start with low concentrations (0.3%) and gradually increase. Always use SPF during the day when using retinol."
+  },
+  {
+    title: "Moisturize Daily",
+    tip: "Use a moisturizer suited to your skin type within 2 minutes of cleansing. This locks in hydration and strengthens your skin barrier against environmental stressors."
+  },
+  {
+    title: "Vitamin C Serum",
+    tip: "Apply Vitamin C serum in the morning for antioxidant protection. It brightens the skin, reduces hyperpigmentation, and protects against free radical damage."
+  },
+  {
+    title: "Consistency Wins",
+    tip: "Skincare results take time. Use the same routine for at least 6-8 weeks before evaluating effectiveness. Consistency is more important than the number of products."
+  },
+  {
+    title: "Avoid Touching Your Face",
+    tip: "Your hands carry bacteria and oils. Touching your face throughout the day can cause breakouts and transfer dirt. Be mindful and keep hands away from your face."
+  },
+  {
+    title: "Patch Test New Products",
+    tip: "Always patch test new skincare products on a small area first. Wait 24 hours to check for adverse reactions before applying to your entire face."
+  },
+  {
+    title: "Change Pillowcase Regularly",
+    tip: "Change your pillowcase every 2-3 days. Pillowcases accumulate bacteria and oils that can transfer to your skin, causing breakouts and irritation."
+  },
+  {
+    title: "Manage Stress",
+    tip: "Stress triggers cortisol production, which increases oil production and inflammation. Practice yoga, meditation, or exercise to keep stress levels in check for clearer skin."
+  },
+  {
+    title: "Food Affects Skin",
+    tip: "High-glycemic foods and dairy may trigger acne. Include more antioxidant-rich foods like berries, leafy greens, and fatty fish for healthier skin from within."
+  }
+];
 
 // Function to convert AQI numeric value to label
 const getAQILabel = (aqiValue: number): string => {
@@ -170,6 +234,15 @@ React.useEffect(() => {
 }, []);
   const { user, loading } = useAuth();
 
+  // Rotate tips every 20 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prevIndex) => (prevIndex + 1) % skinTips.length);
+    }, 20000); // 20 seconds
+
+    return () => clearInterval(interval);
+  }, [skinTips.length]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -284,18 +357,33 @@ React.useEffect(() => {
         
         {/* Left Column - Charts & Insights */}
         <div className="lg:col-span-2 space-y-6">
-          {/* AI Insight */}
+          {/* AI Insight - Rotating Skin Tips */}
           <Card className="border-[#D97757]/20 bg-white shadow-sm overflow-hidden relative">
             <div className="absolute top-0 left-0 w-1 h-full bg-[#D97757]" />
             <CardContent className="p-8 flex gap-6 items-start">
               <div className="w-12 h-12 rounded-full bg-[#F4EBE6] flex items-center justify-center shrink-0 border border-[#D97757]/20">
                 <Sparkles className="w-6 h-6 text-[#D97757]" />
               </div>
-              <div>
-                <h3 className="font-serif text-2xl text-[#2C2A25] mb-2">Inflammation Reduced</h3>
-                <p className="text-[#5A6B5D] text-[15px] leading-relaxed font-light">
-                  Your facial erythema (redness) has decreased by 12% since last week. The new niacinamide serum appears to be effective. Maintain current routine, but increase SPF due to high UV index today.
-                </p>
+              <div className="flex-1 min-h-[120px] relative">
+                {skinTips.map((skinTip, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: idx === currentTipIndex ? 1 : 0, y: idx === currentTipIndex ? 0 : 10 }}
+                    transition={{ duration: 0.5 }}
+                    className={idx === currentTipIndex ? 'absolute w-full' : 'absolute w-full pointer-events-none'}
+                  >
+                    <h3 className="font-serif text-2xl text-[#2C2A25] mb-2">{skinTip.title}</h3>
+                    <p className="text-[#5A6B5D] text-[15px] leading-relaxed font-light">
+                      {skinTip.tip}
+                    </p>
+                  </motion.div>
+                ))}
+                
+                {/* Tip Counter */}
+                <div className="absolute bottom-0 right-0 text-[10px] text-[#5A6B5D] font-medium">
+                  {currentTipIndex + 1} / {skinTips.length}
+                </div>
               </div>
             </CardContent>
           </Card>
