@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { 
-  Sparkles, ArrowUpRight, Droplets, Sun, Wind, 
+  Sparkles, ArrowUpRight, Droplets, Sun, Wind, Thermometer,
   Calendar, ChevronRight, AlertCircle, CheckCircle2, Bot, Heart
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,9 +26,23 @@ export default function DashboardHome() {
   uv: '--',
   aqi: '--',
   humidity: '--',
+  temperature: '--',
   city: 'Detecting...'
 });
 const [derms, setDerms] = React.useState<any[]>([]);
+
+// Function to convert AQI numeric value to label
+const getAQILabel = (aqiValue: number): string => {
+  const aqiMap: { [key: number]: string } = {
+    1: 'Good',
+    2: 'Fair',
+    3: 'Moderate',
+    4: 'Poor',
+    5: 'Very Poor'
+  };
+  return aqiMap[aqiValue] || 'Unknown';
+};
+
 React.useEffect(() => {
   // Function to fetch weather data given lat/lon
   const fetchWeatherData = async (lat: number, lon: number) => {
@@ -53,15 +67,29 @@ React.useEffect(() => {
 
       const airData = await airRes.json();
 
+      const uvRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lon}&appid=8f89e9b51b2d575fdc59c3ab0a27e91a`
+      );
+
+      if (!uvRes.ok) {
+        throw new Error(`UV API error: ${uvRes.status}`);
+      }
+
+      const uvData = await uvRes.json();
+
       // Validate data before accessing
-      const aqi = airData?.list?.[0]?.main?.aqi || '--';
+      const aqiValue = airData?.list?.[0]?.main?.aqi || null;
+      const aqi = aqiValue ? getAQILabel(aqiValue) : '--';
       const humidity = weatherData?.main?.humidity ? weatherData.main.humidity + "%" : '--';
+      const temperature = weatherData?.main?.temp ? Math.round(weatherData.main.temp) + "°C" : '--';
+      const uv = uvData?.value ? Math.round(uvData.value * 10) / 10 : '--';
       const city = weatherData?.name || 'Unknown';
 
       setEnvData({
-        uv: "--",
+        uv: uv,
         aqi: aqi,
         humidity: humidity,
+        temperature: temperature,
         city: city
       });
 
@@ -78,6 +106,7 @@ React.useEffect(() => {
         uv: "--",
         aqi: "--",
         humidity: "--",
+        temperature: "--",
         city: "Unable to load"
       });
     }
@@ -142,6 +171,11 @@ React.useEffect(() => {
     day: 'numeric', 
     year: 'numeric' 
   });
+  const currentTime = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
 
   return (
     <div className="space-y-10 pb-12">
@@ -198,26 +232,34 @@ React.useEffect(() => {
         <Card className="col-span-1 md:col-span-2 flex flex-col justify-between bg-[#F4EBE6] border-none shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-medium text-[#D97757] uppercase tracking-widest">Local Environment</CardTitle>
+              <div>
+                <CardTitle className="text-xs font-medium text-[#D97757] uppercase tracking-widest">Local Environment</CardTitle>
+                <p className="text-[10px] text-[#5A6B5D] mt-1">Updated: {currentTime}</p>
+              </div>
               <span className="text-xs font-medium bg-white/60 backdrop-blur-sm text-[#2C2A25] px-3 py-1.5 rounded-full border border-white">{envData.city}</span>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-6 h-full items-center">
-              <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-full items-center">
+              <div className="flex flex-col items-center justify-center p-4 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Sun className="w-8 h-8 text-[#D97757] mb-3" />
                 <span className="text-3xl font-serif text-[#2C2A25]">{envData.uv}</span>
-                <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-widest mt-2">High UV</span>
+                <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-widest mt-2">UV Index</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
+              <div className="flex flex-col items-center justify-center p-4 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Wind className="w-8 h-8 text-[#5A6B5D] mb-3" />
                 <span className="text-3xl font-serif text-[#2C2A25]">{envData.aqi}</span>
-                <span className="text-[10px] font-bold text-[#5A6B5D] uppercase tracking-widest mt-2">Good AQI</span>
+                <span className="text-[10px] font-bold text-[#5A6B5D] uppercase tracking-widest mt-2">AQI</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
+              <div className="flex flex-col items-center justify-center p-4 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Droplets className="w-8 h-8 text-[#8B7355] mb-3" />
                 <span className="text-3xl font-serif text-[#2C2A25]">{envData.humidity}</span>
                 <span className="text-[10px] font-bold text-[#8B7355] uppercase tracking-widest mt-2">Humidity</span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-4 rounded-[2rem] bg-white shadow-sm border border-white/50">
+                <Thermometer className="w-8 h-8 text-[#D97757] mb-3" />
+                <span className="text-3xl font-serif text-[#2C2A25]">{envData.temperature}</span>
+                <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-widest mt-2">Temp</span>
               </div>
             </div>
           </CardContent>
