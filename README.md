@@ -226,7 +226,6 @@ The architecture is modular and scalable, allowing integration with future healt
 ### Artificial Intelligence
 
 * CNN Computer Vision Models
-* HAM10000 dermatology dataset
 * Google Gemini API
 
 ### APIs
