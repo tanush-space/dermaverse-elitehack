@@ -30,6 +30,7 @@ export default function DashboardHome() {
   city: 'Detecting...'
 });
 const [derms, setDerms] = React.useState<any[]>([]);
+const [bookedAppointment, setBookedAppointment] = React.useState<any>(null);
 
 // Function to convert AQI numeric value to label
 const getAQILabel = (aqiValue: number): string => {
@@ -42,6 +43,18 @@ const getAQILabel = (aqiValue: number): string => {
   };
   return aqiMap[aqiValue] || 'Unknown';
 };
+
+React.useEffect(() => {
+  // Load booked appointment from localStorage
+  const appointments = JSON.parse(localStorage.getItem('dermaverse_appointments') || '[]');
+  if (appointments && appointments.length > 0) {
+    // Get the most recent appointment
+    const latestAppointment = appointments.sort((a: any, b: any) => 
+      new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+    )[0];
+    setBookedAppointment(latestAppointment);
+  }
+}, []);
 
 React.useEffect(() => {
   // Function to fetch weather data given lat/lon
@@ -359,29 +372,58 @@ React.useEffect(() => {
               <CardTitle className="text-xs font-medium text-[#EDE8E0] uppercase tracking-widest">Next Consultation</CardTitle>
             </CardHeader>
             <CardContent>
-
-
-
-idk what to do lol. gimme ready to copy paste stuff
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-full bg-[#1A1916] overflow-hidden border-2 border-[#5A6B5D]">
-                  <img src="https://picsum.photos/seed/doc/100/100" alt="Doctor" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <p className="font-serif text-xl text-white">Dr. Priyanka Pandita</p>
-                  <p className="text-xs text-[#EDE8E0] uppercase tracking-widest mt-1">Board Certified</p>
-                </div>
-              </div>
-              <div className="bg-[#1A1916] rounded-2xl p-4 flex items-center justify-between mb-6 border border-white/5">
-                <div className="flex items-center gap-3 text-sm text-[#FDFBF7]">
-                  <Calendar className="w-4 h-4 text-[#D97757]" />
-                  <span className="font-medium">March 18, 10:00 AM</span>
-                </div>
-                <span className="text-[10px] font-bold bg-[#D97757]/20 text-[#D97757] px-3 py-1.5 rounded-full uppercase tracking-widest border border-[#D97757]/30">Telehealth</span>
-              </div>
-              <Button variant="outline" className="w-full border-white/20 text-[#0e0e0e] hover:bg-white hover:text-[#2C2A25] rounded-full h-12">
-                Manage Booking
-              </Button>
+              {bookedAppointment ? (
+                <>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-full bg-[#1A1916] overflow-hidden border-2 border-[#5A6B5D]">
+                      <img src={`https://picsum.photos/seed/${bookedAppointment.doctor}/100/100`} alt="Doctor" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="font-serif text-xl text-white">{bookedAppointment.doctor}</p>
+                      <p className="text-xs text-[#EDE8E0] uppercase tracking-widest mt-1">{bookedAppointment.specialty}</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#1A1916] rounded-2xl p-4 flex items-center justify-between mb-6 border border-white/5">
+                    <div className="flex items-center gap-3 text-sm text-[#FDFBF7]">
+                      <Calendar className="w-4 h-4 text-[#D97757]" />
+                      <span className="font-medium">
+                        {new Date(bookedAppointment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {bookedAppointment.time}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-[#D97757]/20 text-[#D97757] px-3 py-1.5 rounded-full uppercase tracking-widest border border-[#D97757]/30">
+                      {bookedAppointment.type}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#EDE8E0] mb-4 px-4 py-2 bg-white/5 rounded-xl">
+                    <p className="font-medium">{bookedAppointment.clinic}</p>
+                  </div>
+                  <Button variant="outline" className="w-full border-white/20 text-[#FDFBF7] hover:bg-white/10 rounded-full h-12">
+                    Manage Booking
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-full bg-[#1A1916] overflow-hidden border-2 border-[#5A6B5D]">
+                      <img src="https://picsum.photos/seed/doc/100/100" alt="Doctor" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="font-serif text-xl text-white">Dr. Priyanka Pandita</p>
+                      <p className="text-xs text-[#EDE8E0] uppercase tracking-widest mt-1">Board Certified</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#1A1916] rounded-2xl p-4 flex items-center justify-between mb-6 border border-white/5">
+                    <div className="flex items-center gap-3 text-sm text-[#FDFBF7]">
+                      <Calendar className="w-4 h-4 text-[#D97757]" />
+                      <span className="font-medium">March 18, 10:00 AM</span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-[#D97757]/20 text-[#D97757] px-3 py-1.5 rounded-full uppercase tracking-widest border border-[#D97757]/30">Telehealth</span>
+                  </div>
+                  <Button variant="outline" className="w-full border-white/20 text-[#0e0e0e] hover:bg-white hover:text-[#2C2A25] rounded-full h-12">
+                    Manage Booking
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
