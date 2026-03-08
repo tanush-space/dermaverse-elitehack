@@ -30,25 +30,9 @@ export default function DashboardHome() {
 });
 const [derms, setDerms] = React.useState<any[]>([]);
 React.useEffect(() => {
-
-  if (!navigator.geolocation) return;
-
-  navigator.geolocation.getCurrentPosition(
-  async (position) => {
-
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-
-    const dermRes = await fetch(
-  `https://overpass-api.de/api/interpreter?data=[out:json];node["healthcare"="doctor"]["healthcare:speciality"="dermatology"](around:5000,${lat},${lon});out;`
-);
-
-const dermData = await dermRes.json();
-
-setDerms(dermData.elements.slice(0,5));
-
+  // Function to fetch weather data given lat/lon
+  const fetchWeatherData = async (lat: number, lon: number) => {
     try {
-
       const weatherRes = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=8f89e9b51b2d575fdc59c3ab0a27e91a&units=metric`
       );
@@ -81,28 +65,65 @@ setDerms(dermData.elements.slice(0,5));
         city: city
       });
 
+      // Fetch dermatologists
+      const dermRes = await fetch(
+        `https://overpass-api.de/api/interpreter?data=[out:json];node["healthcare"="doctor"]["healthcare:speciality"="dermatology"](around:5000,${lat},${lon});out;`
+      );
+      const dermData = await dermRes.json();
+      setDerms(dermData.elements?.slice(0, 5) || []);
+
     } catch (err) {
       console.error("Error fetching environmental data:", err);
       setEnvData({
         uv: "--",
         aqi: "--",
         humidity: "--",
-        city: "Error"
+        city: "Unable to load"
       });
     }
+  };
 
-  },
+  // Function to fetch location from IP as fallback
+  const fetchLocationFromIP = async () => {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (!res.ok) throw new Error('IP geolocation failed');
+      const data = await res.json();
+      console.log("Using IP-based location:", data.city, data.latitude, data.longitude);
+      await fetchWeatherData(data.latitude, data.longitude);
+    } catch (err) {
+      console.error("IP geolocation fallback failed:", err);
+      // Set default location (e.g., New Delhi)
+      await fetchWeatherData(28.6139, 77.2090);
+    }
+  };
 
-  (error) => {
-    console.error("Location error:", error);
-  },
-
-  {
-    enableHighAccuracy: false,
-    timeout: 5000,
-    maximumAge: 60000
+  // Try geolocation if available
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        console.log("Using GPS location:", lat, lon);
+        await fetchWeatherData(lat, lon);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        // Fallback to IP-based geolocation
+        console.log("Falling back to IP-based geolocation...");
+        fetchLocationFromIP();
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 60000
+      }
+    );
+  } else {
+    // Geolocation not available, use IP fallback
+    console.log("Geolocation not available, using IP-based location...");
+    fetchLocationFromIP();
   }
-);
 
 }, []);
   const { user, loading } = useAuth();
