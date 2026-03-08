@@ -9,39 +9,39 @@ const CLINICS = [
   {
     id: 1,
     name: 'SkinHealth Institute',
-    doctor: 'Dr. Emily Chen',
+    doctor: 'Dr. Priyanka Pandita',
     specialty: 'Board Certified Dermatologist',
     rating: 4.9,
     reviews: 128,
     distance: '1.2 mi',
-    address: '450 Sutter St, San Francisco',
-    image: 'https://picsum.photos/seed/clinic1/300/200',
+    address: '450 Jammu',
+    image: 'https://www.drrevathihospital.com/asset/images/blog/1729596934.png',
     available: ['Today, 2:00 PM', 'Tomorrow, 10:00 AM'],
     type: 'In-Person'
   },
   {
     id: 2,
     name: 'DermaVerse Telehealth',
-    doctor: 'Dr. James Wilson',
+    doctor: 'Dr. Saurabh Bhan',
     specialty: 'Clinical Dermatologist',
     rating: 4.8,
     reviews: 342,
     distance: 'Online',
     address: 'Virtual Consultation',
-    image: 'https://picsum.photos/seed/doc2/300/200',
+    image: 'https://tse1.mm.bing.net/th/id/OIP.Cap0X8hjgiUws0MP2jxipgHaE8?rs=1&pid=ImgDetMain&o=7&rm=3',
     available: ['In 15 mins', 'Today, 4:30 PM'],
     type: 'Virtual'
   },
   {
     id: 3,
     name: 'Pacific Dermatology',
-    doctor: 'Dr. Sarah Jenkins',
+    doctor: 'Dr. Ankur Gupta',
     specialty: 'Cosmetic & Medical Dermatology',
     rating: 4.7,
     reviews: 89,
     distance: '3.5 mi',
-    address: '2100 Webster St, San Francisco',
-    image: 'https://picsum.photos/seed/clinic3/300/200',
+    address: '2100 , 04, Samba',
+    image: 'https://www.sriramakrishnahospital.com/wp-content/uploads/2020/12/derma2.jpg',
     available: ['Wed, 9:00 AM', 'Thu, 1:00 PM'],
     type: 'In-Person'
   }
@@ -82,7 +82,7 @@ export default function AppointmentsPage() {
         <div className="lg:col-span-1 order-2 lg:order-1">
           <Card className="h-[400px] lg:h-[calc(100vh-12rem)] sticky top-24 overflow-hidden border-slate-200 p-0">
             <div className="w-full h-full bg-slate-100 relative">
-              <img src="https://picsum.photos/seed/map/800/1200" alt="Map" referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-60 grayscale" />
+              <img src="https://www.addictivetips.com/app/uploads/2017/11/google-maps-search-this-area.jpg" alt="Map" referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-60 grayscale" />
               
               {/* Fake Map Pins */}
               <div className="absolute top-1/3 left-1/4">

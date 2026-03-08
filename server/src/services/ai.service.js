@@ -1,5 +1,9 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+/* --------------------------------------------------- */
+/* GEMINI INITIALIZATION                               */
+/* --------------------------------------------------- */
+
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY);
 
 const model = genAI.getGenerativeModel({
@@ -12,62 +16,101 @@ const model = genAI.getGenerativeModel({
 /* --------------------------------------------------- */
 
 async function generateChatResponse(user, message, imageBuffer) {
+  try {
 
-  const prompt = `
-You are DermaVerse Intelligence, an advanced AI skincare assistant designed to help users understand and manage their skin health.
+    const prompt = `
+You are DermaVerse Intelligence, a warm and friendly AI skincare assistant.
 
-You are NOT a doctor and must never claim to diagnose diseases. Instead, provide helpful skincare guidance based on visible symptoms and user concerns.
+Your goal is to help users understand and care for their skin in a supportive and human way.
+
+PERSONALITY:
+You speak like a caring skincare friend. Calm, kind, and supportive.
+Your tone should feel natural and conversational.
+
+IMPORTANT LIMITATIONS:
+You are NOT a doctor.
+Never diagnose diseases or claim medical authority.
+If something sounds serious, gently suggest visiting a dermatologist.
 
 PERSONALIZATION DATA:
-Skin Type: ${user.skinType || "Unknown"}
-Primary Skin Concerns: ${user.primaryConcerns?.join(", ") || "Not specified"}
-Sun Exposure Level: ${user.sunExposure || "Unknown"}
-Pollution Exposure: ${user.pollutionExposure || "Unknown"}
-Diet Pattern: ${user.dietPattern || "Unknown"}
+Skin Type: ${user?.skinType || "Unknown"}
+Primary Skin Concerns: ${user?.primaryConcerns?.join(", ") || "Not specified"}
+Sun Exposure Level: ${user?.sunExposure || "Unknown"}
+Pollution Exposure: ${user?.pollutionExposure || "Unknown"}
+Diet Pattern: ${user?.dietPattern || "Unknown"}
 
-ASSISTANT BEHAVIOR RULES:
-- Be friendly, supportive, and professional.
-- Focus on skincare education and prevention.
-- Avoid giving prescription medical advice.
-- If symptoms appear severe, recommend consulting a dermatologist.
-- Provide clear actionable steps.
+RESPONSE STYLE RULES:
+- Talk like you are chatting with the user.
+- Be warm, calm, and supportive.
+- Do NOT use markdown formatting like **bold**, # headings, or bullet symbols.
+- Write in short natural paragraphs.
+- Use a few gentle emojis like 🌿✨💧🙂 but don't overuse them.
+- Avoid robotic or textbook language.
+- Avoid sounding like a report.
 
-RESPONSE FORMAT:
-1. Brief Understanding of the Problem
-2. Possible Causes
-3. Recommended Skincare Actions
-4. Ingredients That May Help
-5. Ingredients or Habits to Avoid
+HOW TO STRUCTURE YOUR RESPONSE:
+
+Start with a warm acknowledgement.
+
+Then talk about:
+what might be happening with their skin
+possible causes
+simple skincare steps they can try
+helpful ingredients
+things they may want to avoid
+
+End with a supportive message.
 
 USER MESSAGE:
 ${message}
-
-Respond clearly and helpfully.
 `;
 
-  let result;
+    let result;
 
-  if (imageBuffer) {
+    if (imageBuffer) {
 
-    const imagePart = {
-      inlineData: {
-        data: imageBuffer.toString("base64"),
-        mimeType: "image/jpeg"
-      }
-    };
+      const imagePart = {
+        inlineData: {
+          data: imageBuffer.toString("base64"),
+          mimeType: "image/jpeg"
+        }
+      };
 
-    result = await model.generateContent([
-      prompt,
-      imagePart
-    ]);
+      result = await model.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              imagePart
+            ]
+          }
+        ]
+      });
 
-  } else {
+    } else {
 
-    result = await model.generateContent(prompt);
+      result = await model.generateContent(prompt);
+
+    }
+
+    let response = result.response.text();
+
+    /* Clean unwanted markdown formatting */
+    response = response
+      .replace(/\*\*/g, "")
+      .replace(/##/g, "")
+      .replace(/#/g, "");
+
+    return response;
+
+  } catch (error) {
+
+    console.error("Gemini Chat Error:", error);
+
+    return "Sorry, something went wrong while generating the skincare advice. Please try again in a moment 🙂";
 
   }
-
-  return result.response.text();
 }
 
 
@@ -78,83 +121,72 @@ Respond clearly and helpfully.
 
 async function analyzeSkinImage(imageBuffer) {
   try {
-    console.log('🤖 Starting Gemini analysis...');
-    console.log('🤖 Image buffer size:', imageBuffer.length);
+
+    console.log("🤖 Starting Gemini image analysis...");
 
     const prompt = `
-You are DermaVerse Clinical Skin Analyzer.
+You are DermaVerse Skin Analyzer.
 
-Your task is to analyze a facial skin image and provide an AI-based cosmetic skin assessment.
+You help users understand visible skin characteristics from a photo and give gentle skincare suggestions.
 
-IMPORTANT LIMITATIONS:
-- You are NOT diagnosing diseases.
-- Only analyze visible cosmetic skin indicators.
-- If something looks medically concerning, recommend seeing a dermatologist.
+IMPORTANT:
+You are NOT diagnosing medical conditions.
+You only describe visible cosmetic skin traits.
 
-ANALYSIS OBJECTIVES:
+If something looks medically concerning, suggest visiting a dermatologist.
 
-Evaluate the following:
+RESPONSE STYLE:
 
-1️⃣ Skin Type Estimation  
-(dry, oily, combination, balanced, sensitive)
+Write like a smart, friendly skincare guide talking to the user.
 
-2️⃣ Acne / Breakouts  
-- none
-- mild
-- moderate
-- severe
+FORMAT RULES:
+- Use short chat-style sections.
+- Avoid long paragraphs.
+- Use **bold** for important ideas.
+- Use *italics* for subtle emphasis.
+- Use bullet points for tips.
+- Keep each section 1–3 lines max.
+- Add a few light emojis like 🌿💧✨🙂 but don't overdo them.
 
-3️⃣ Oiliness / Sebum Level  
+STRUCTURE:
 
-4️⃣ Visible Pores  
+Start with a short friendly opener.
 
-5️⃣ Pigmentation / Dark Spots  
+Then include sections like this:
 
-6️⃣ Redness / Irritation  
-
-7️⃣ Texture Quality  
-
-Then provide:
-
-SKIN ANALYSIS REPORT FORMAT:
-
-Skin Type:
-Acne Severity:
-Oil Level:
-Pore Visibility:
-Pigmentation Level:
-Redness / Irritation:
-Skin Texture:
-
-KEY OBSERVATIONS:
+**What I think might be happening**
 (short explanation)
 
-RECOMMENDED SKINCARE ROUTINE:
-Morning Routine
-Evening Routine
+**Why this might be happening**
+(short insights)
 
-INGREDIENTS TO LOOK FOR:
-(list)
+**Things that could help**
+- tip
+- tip
+- tip
 
-INGREDIENTS TO AVOID:
-(list)
+**Ingredients your skin may like**
+- ingredient
+- ingredient
 
-LIFESTYLE SUGGESTIONS:
-(short tips)
+**Things to avoid**
+- item
+- item
 
-DISCLAIMER:
-Mention that this is an AI-based cosmetic analysis and not a medical diagnosis.
+End with a short supportive line.
 `;
 
-    console.log('🤖 Sending request to Gemini...');
-    
-    // Detect MIME type from buffer or use file info
-    let mimeType = "image/jpeg"; // default
+    /* Detect MIME type */
+
+    let mimeType = "image/jpeg";
+
     if (imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50) {
       mimeType = "image/png";
-    } else if (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8) {
+    } 
+    else if (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8) {
       mimeType = "image/jpeg";
-    } else if (imageBuffer[0] === 0x47 && imageBuffer[1] === 0x49) {
+    } 
+    else if (imageBuffer[0] === 0x47 && imageBuffer[1] === 0x49) {
       mimeType = "image/gif";
     }
 
@@ -165,25 +197,44 @@ Mention that this is an AI-based cosmetic analysis and not a medical diagnosis.
       }
     };
 
-    const result = await model.generateContent([
-      prompt,
-      imagePart
-    ]);
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            imagePart
+          ]
+        }
+      ]
+    });
 
-    console.log('🤖 Gemini response received');
-    const response = result.response.text();
-    console.log('🤖 Response length:', response.length);
-    
+    let response = result.response.text();
+
+    /* Clean formatting */
+    response = response
+      .replace(/\*\*/g, "")
+      .replace(/##/g, "")
+      .replace(/#/g, "");
+
+    console.log("🤖 Gemini analysis complete");
+
     return response;
+
   } catch (error) {
-    console.error('🤖 Gemini API Error:', error);
-    console.error('🤖 Error details:', error.message);
-    console.error('🤖 Error stack:', error.stack);
-    throw new Error(`Gemini API Error: ${error.message}`);
+
+    console.error("Gemini Image Analysis Error:", error);
+
+    throw new Error("AI skin analysis failed. Please try again.");
+
   }
 }
 
 
+
+/* --------------------------------------------------- */
+/* EXPORT FUNCTIONS                                    */
+/* --------------------------------------------------- */
 
 module.exports = {
   generateChatResponse,

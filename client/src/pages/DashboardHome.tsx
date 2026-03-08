@@ -22,6 +22,89 @@ const data = [
 ];
 
 export default function DashboardHome() {
+  const [envData, setEnvData] = React.useState({
+  uv: '--',
+  aqi: '--',
+  humidity: '--',
+  city: 'Detecting...'
+});
+const [derms, setDerms] = React.useState<any[]>([]);
+React.useEffect(() => {
+
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+  async (position) => {
+
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    const dermRes = await fetch(
+  `https://overpass-api.de/api/interpreter?data=[out:json];node["healthcare"="doctor"]["healthcare:speciality"="dermatology"](around:5000,${lat},${lon});out;`
+);
+
+const dermData = await dermRes.json();
+
+setDerms(dermData.elements.slice(0,5));
+
+    try {
+
+      const weatherRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=8f89e9b51b2d575fdc59c3ab0a27e91a&units=metric`
+      );
+
+      if (!weatherRes.ok) {
+        throw new Error(`Weather API error: ${weatherRes.status}`);
+      }
+
+      const weatherData = await weatherRes.json();
+
+      const airRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=8f89e9b51b2d575fdc59c3ab0a27e91a`
+      );
+
+      if (!airRes.ok) {
+        throw new Error(`Air pollution API error: ${airRes.status}`);
+      }
+
+      const airData = await airRes.json();
+
+      // Validate data before accessing
+      const aqi = airData?.list?.[0]?.main?.aqi || '--';
+      const humidity = weatherData?.main?.humidity ? weatherData.main.humidity + "%" : '--';
+      const city = weatherData?.name || 'Unknown';
+
+      setEnvData({
+        uv: "--",
+        aqi: aqi,
+        humidity: humidity,
+        city: city
+      });
+
+    } catch (err) {
+      console.error("Error fetching environmental data:", err);
+      setEnvData({
+        uv: "--",
+        aqi: "--",
+        humidity: "--",
+        city: "Error"
+      });
+    }
+
+  },
+
+  (error) => {
+    console.error("Location error:", error);
+  },
+
+  {
+    enableHighAccuracy: false,
+    timeout: 5000,
+    maximumAge: 60000
+  }
+);
+
+}, []);
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -95,24 +178,24 @@ export default function DashboardHome() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs font-medium text-[#D97757] uppercase tracking-widest">Local Environment</CardTitle>
-              <span className="text-xs font-medium bg-white/60 backdrop-blur-sm text-[#2C2A25] px-3 py-1.5 rounded-full border border-white">San Francisco, CA</span>
+              <span className="text-xs font-medium bg-white/60 backdrop-blur-sm text-[#2C2A25] px-3 py-1.5 rounded-full border border-white">{envData.city}</span>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-6 h-full items-center">
               <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Sun className="w-8 h-8 text-[#D97757] mb-3" />
-                <span className="text-3xl font-serif text-[#2C2A25]">7.2</span>
+                <span className="text-3xl font-serif text-[#2C2A25]">{envData.uv}</span>
                 <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-widest mt-2">High UV</span>
               </div>
               <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Wind className="w-8 h-8 text-[#5A6B5D] mb-3" />
-                <span className="text-3xl font-serif text-[#2C2A25]">42</span>
+                <span className="text-3xl font-serif text-[#2C2A25]">{envData.aqi}</span>
                 <span className="text-[10px] font-bold text-[#5A6B5D] uppercase tracking-widest mt-2">Good AQI</span>
               </div>
               <div className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-white/50">
                 <Droplets className="w-8 h-8 text-[#8B7355] mb-3" />
-                <span className="text-3xl font-serif text-[#2C2A25]">65%</span>
+                <span className="text-3xl font-serif text-[#2C2A25]">{envData.humidity}</span>
                 <span className="text-[10px] font-bold text-[#8B7355] uppercase tracking-widest mt-2">Humidity</span>
               </div>
             </div>
@@ -142,7 +225,7 @@ export default function DashboardHome() {
           </Card>
 
           {/* Progress Chart */}
-          <Card className="bg-white">
+          <Card className="bg-white overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle className="text-xl font-serif text-[#2C2A25]">8-Week Progress</CardTitle>
               <select className="text-xs font-medium uppercase tracking-widest border border-[#EDE8E0] rounded-full bg-[#FDFBF7] px-4 py-2 outline-none focus:ring-2 focus:ring-[#D97757]/20 text-[#5A6B5D] appearance-none cursor-pointer">
@@ -152,7 +235,7 @@ export default function DashboardHome() {
               </select>
             </CardHeader>
             <CardContent>
-              <div className="h-[280px] w-full mt-4">
+              <div style={{ width: '100%', height: '280px' }} className="mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                     <defs>
@@ -213,23 +296,27 @@ export default function DashboardHome() {
               <CardTitle className="text-xs font-medium text-[#EDE8E0] uppercase tracking-widest">Next Consultation</CardTitle>
             </CardHeader>
             <CardContent>
+
+
+
+idk what to do lol. gimme ready to copy paste stuff
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-14 h-14 rounded-full bg-[#1A1916] overflow-hidden border-2 border-[#5A6B5D]">
                   <img src="https://picsum.photos/seed/doc/100/100" alt="Doctor" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <p className="font-serif text-xl text-white">Dr. Emily Chen</p>
+                  <p className="font-serif text-xl text-white">Dr. Priyanka Pandita</p>
                   <p className="text-xs text-[#EDE8E0] uppercase tracking-widest mt-1">Board Certified</p>
                 </div>
               </div>
               <div className="bg-[#1A1916] rounded-2xl p-4 flex items-center justify-between mb-6 border border-white/5">
                 <div className="flex items-center gap-3 text-sm text-[#FDFBF7]">
                   <Calendar className="w-4 h-4 text-[#D97757]" />
-                  <span className="font-medium">Oct 28, 10:00 AM</span>
+                  <span className="font-medium">March 18, 10:00 AM</span>
                 </div>
                 <span className="text-[10px] font-bold bg-[#D97757]/20 text-[#D97757] px-3 py-1.5 rounded-full uppercase tracking-widest border border-[#D97757]/30">Telehealth</span>
               </div>
-              <Button variant="outline" className="w-full border-white/20 text-[#FDFBF7] hover:bg-white hover:text-[#2C2A25] rounded-full h-12">
+              <Button variant="outline" className="w-full border-white/20 text-[#0e0e0e] hover:bg-white hover:text-[#2C2A25] rounded-full h-12">
                 Manage Booking
               </Button>
             </CardContent>
@@ -239,3 +326,4 @@ export default function DashboardHome() {
     </div>
   );
 }
+
