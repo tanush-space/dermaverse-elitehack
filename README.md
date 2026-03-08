@@ -221,7 +221,7 @@ The architecture is modular and scalable, allowing integration with future healt
 
 ### Database
 
-* MongoDB
+* MongoDB mongoose
 
 ### Artificial Intelligence
 
@@ -234,11 +234,8 @@ The architecture is modular and scalable, allowing integration with future healt
 * Weather API
 * Air Quality Index API
 * UV Index API
+* Gemini API
 
-### Deployment
-
-* Cloud hosting
-* Secure authentication
 
 ---
 
