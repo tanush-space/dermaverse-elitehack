@@ -277,19 +277,8 @@ npm run dev
 
 ---
 
-# 📽 Demo & Pitch
-
-### Demo Video
-
-(Insert demo video link)
-
-### Pitch Video
-
-(Insert pitch video link)
-
-### Live Deployment
-
-(Insert deployed link)
+# 📽 Demo & Pitch:
+https://drive.google.com/drive/folders/12lcSpsAWBlbmVX-SXkSqjBMKJsMHMAwp
 
 ---
 
