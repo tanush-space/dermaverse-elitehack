@@ -6,7 +6,7 @@
 
 [![React](https://img.shields.io/badge/Frontend-React.js-blue)]()
 [![Node](https://img.shields.io/badge/Backend-Node.js-green)]()
-[![MongoDB](https://img.shields.io/badge/Database-MongoDB-darkgreen)]()
+[![MongoDB mongoose](https://img.shields.io/badge/Database-MongoDB-darkgreen)]()
 [![AI](https://img.shields.io/badge/AI-CNN%20%7C%20Gemini-orange)]()
 [![Cloud](https://img.shields.io/badge/Deployment-Cloud-blueviolet)]()
 
