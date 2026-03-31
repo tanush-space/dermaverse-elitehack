@@ -16,9 +16,6 @@ app.use(express.json())
 
 app.use(cookieParser()) //this will parse the cookies from the incoming request and make them available in req.cookies
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 //importing routes
 const authRoutes=require('./routes/auth.routes');
 const chatRoutes=require('./routes/chat.routes');
